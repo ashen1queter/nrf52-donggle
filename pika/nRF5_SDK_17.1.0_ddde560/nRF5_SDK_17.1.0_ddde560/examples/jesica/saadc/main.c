@@ -1,53 +1,3 @@
-/**
- * Copyright (c) 2014 - 2021, Nordic Semiconductor ASA
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form, except as embedded into a Nordic
- *    Semiconductor ASA integrated circuit in a product or a software update for
- *    such product, must reproduce the above copyright notice, this list of
- *    conditions and the following disclaimer in the documentation and/or other
- *    materials provided with the distribution.
- *
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * 4. This software, with or without modification, must only be used with a
- *    Nordic Semiconductor ASA integrated circuit.
- *
- * 5. Any software provided in binary form under this license must not be reverse
- *    engineered, decompiled, modified and/or disassembled.
- *
- * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
-/** @file
- * @defgroup nrf_adc_example main.c
- * @{
- * @ingroup nrf_adc_example
- * @brief ADC Example Application main file.
- *
- * This file contains the source code for a sample application using ADC.
- *
- * @image html example_board_setup_a.jpg "Use board setup A for this example."
- */
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -63,26 +13,10 @@
 #include "app_util_platform.h"
 #include "nrf_pwr_mgmt.h"
 #include "nrf_drv_rtc.h"
-
-
-#define SAADC_CALIBRATION_INTERVAL 5              //Determines how often the SAADC should be calibrated relative to NRF_DRV_SAADC_EVT_DONE event. E.g. value 5 will make the SAADC calibrate every fifth time the NRF_DRV_SAADC_EVT_DONE is received.
-#define SAADC_SAMPLES_IN_BUFFER 3                 //Number of SAADC samples in RAM before returning a SAADC event. For low power SAADC set this constant to 1. Otherwise the EasyDMA will be enabled for an extended time which consumes high current.
+#include "aadc.h"
 
 /**
-#define RTC_FREQUENCY 32                          //Determines the RTC frequency and prescaler
-#define RTC_CC_VALUE 8                            //Determines the RTC interrupt frequency and thereby the SAADC sampling frequency
-*/
-
-static const nrf_drv_timer_t m_timer = NRF_DRV_TIMER_INSTANCE(0);
-static nrf_saadc_value_t     m_buffer_pool[2][SAADC_SAMPLES_IN_BUFFER];
-static nrf_ppi_channel_t     m_ppi_channel;
-static uint32_t              m_adc_evt_counter;
-
-//static volatile bool is_ready = true;
-static bool m_saadc_calib = false;
-
-/**
-static void rtc_handler(nrf_drv_rtc_int_type_t int_type)
+void rtc_handler(nrf_drv_rtc_int_type_t int_type)
 {
     uint32_t err_code;
 	
@@ -98,14 +32,14 @@ static void rtc_handler(nrf_drv_rtc_int_type_t int_type)
     }
 }
 
-static void lfclk_config(void)
+void lfclk_config(void)
 {
     ret_code_t err_code = nrf_drv_clock_init();                        //Initialize the clock source specified in the nrf_drv_config.h file, i.e. the CLOCK_CONFIG_LF_SRC constant
     APP_ERROR_CHECK(err_code);
     nrf_drv_clock_lfclk_request(NULL);
 }
 
-static void rtc_config(void)
+void rtc_config(void)
 {
 
     uint32_t err_code;
@@ -124,12 +58,12 @@ static void rtc_config(void)
 }
 */
 
-static long fastMap(long x, long in_min, long in_max, long out_min, long out_max) {
+long fastMap(long x, long in_min, long in_max, long out_min, long out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 
-static uint8_t fastMap_arr[3];
+
 
 void timer_handler(nrf_timer_event_t event_type, void * p_context)
 {
@@ -284,27 +218,24 @@ void saadc_init(void)
 
 }
 
-
+/**
 static void power_init(void)
 {
     ret_code_t err_code = nrf_pwr_mgmt_init();
     APP_ERROR_CHECK(err_code);
 }
+*/
 
 
-/**
- * @brief Function for main application entry.
- */
+/**@brief Function for main application entry.
 int main(void)
 {
     NRF_POWER->DCDCEN = 1;
 
     power_init();
     
-    /**
     lfclk_config();                                   //Configure low frequency 32kHz clock
     rtc_config();                                    //Configure RTC. The RTC will generate periodic interrupts. Requires 32kHz clock to operate.
-    */
 
     saadc_init();
     saadc_sampling_event_init();
@@ -316,11 +247,11 @@ int main(void)
         {
             nrf_drv_saadc_abort();                                  // Abort all ongoing conversions. Calibration cannot be run if SAADC is busy
             while(nrf_drv_saadc_calibrate_offset() != NRF_SUCCESS); //Trigger calibration task
-            /**@todo m_saadc_calib = false;\
-            */
+            @todo m_saadc_calib = false;\
+
         }
         nrf_pwr_mgmt_run();
     }
 
 }
-/** @} */
+*/

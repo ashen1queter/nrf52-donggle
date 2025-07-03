@@ -1,60 +1,3 @@
-
-
-/**
- * Copyright (c) 2017 - 2021, Nordic Semiconductor ASA
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form, except as embedded into a Nordic
- *    Semiconductor ASA integrated circuit in a product or a software update for
- *    such product, must reproduce the above copyright notice, this list of
- *    conditions and the following disclaimer in the documentation and/or other
- *    materials provided with the distribution.
- *
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
- *    contributors may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * 4. This software, with or without modification, must only be used with a
- *    Nordic Semiconductor ASA integrated circuit.
- *
- * 5. Any software provided in binary form under this license must not be reverse
- *    engineered, decompiled, modified and/or disassembled.
- *
- * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
-
-/** @brief GATT Service server example application main file.
-
-    @details This file contains the main source code for a sample server application that uses the
-             GATT Service. This client can be used to send Service Changed indications. This is
-             needed if your application changes its GATT tables by removing or adding
-             services. If we send a Service Changed indication, a typical action is for the peer
-             device to rediscover the services of our GATT database.
-
-             For more information about the GATT Service, see "Defined Generic Attribute Profile Service"
-             in Bluetooth Specification Version 5.0 Vol 3, Part G Section 7.
-*/
-
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
 #include "nordic_common.h"
 #include "nrf_sdm.h"
 #include "ble.h"
@@ -63,8 +6,6 @@
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
-#include "app_util.h"
-#include "app_error.h"
 #include "app_util.h"
 #include "app_timer.h"
 #include "bsp_btn_ble.h"
@@ -75,12 +16,13 @@
 #include "ble_conn_state.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_scan.h"
-#include "ble_gattc.h"
-#include "nrf_pwr_mgmt.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
+
+#include "aadc.h"
+#include "main.h"
 
 
 #define APP_BLE_CONN_CFG_TAG      1                                /**< A tag identifying the SoftDevice BLE configuration. */
@@ -111,13 +53,12 @@ typedef struct
 NRF_BLE_GATT_DEF(m_gatt);                                 /**< GATT module instance. */
 NRF_BLE_SCAN_DEF(m_scan);                                 /**< Scanning Module instance. */
   
-static uint16_t              m_char_handle;               /**< Characteristic handle. */
-static uint16_t              m_ser_handle;               /**< Characteristic handle. */
-static uint16_t              m_conn_handle;               /**< Current connection handle. */
+static uint16_t              m_ser_handle;                /**< Characteristic handle. */
 static bool                  m_whitelist_disabled;        /**< True if whitelist has been temporarily disabled. */
 static bool                  m_memory_access_in_progress; /**< Flag to keep track of ongoing operations on persistent memory. */
 static bool                  m_erase_bonds;               /**< Bool to determine if bonds should be erased before scanning starts. Based on button push upon startup. */
-
+static bool                  device_connected = false;
+static bool                  sampling_started = false;
 /**< Scan parameters requested for scanning and connection. */
 static ble_gap_scan_params_t const m_scan_param =
 {
@@ -230,7 +171,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             {
               ble_gattc_char_t characteristic = rsp->chars[i];
 
-              if (characteristic.uuid.uuid == MY_CHAR_UUID && characteristic.uuid.type == MY_UUID_TYPE)
+              if (characteristic.uuid.uuid == 1 && characteristic.uuid.type == 0) //1 and 0 are placeholders
               {
                   m_char_handle = characteristic.handle_value;
               }
@@ -246,8 +187,11 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             {
                 scan_start();
             }
+
+            device_connected = true;
+            sampling_started = false;
             
-             sd_ble_gattc_primary_services_discover(m_conn_handle, 0x0001, NULL);
+            sd_ble_gattc_primary_services_discover(m_conn_handle, 0x0001, NULL);
 
         } break;
 
@@ -277,6 +221,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             {
                 scan_start();
             }
+
+            device_connected = false;
+
         } break;
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -305,7 +252,13 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
         } break;
+        
+        case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
+        {
+          ble_tx_in_flight = false;
+        }
 
+            
         default:
             break;
     }
@@ -332,6 +285,11 @@ static void soc_evt_handler(uint32_t evt_id, void * p_context)
                 scan_start();
             }
             break;
+
+        /**@todo When using cdc
+        case NRF_EVT_POWER_USB_POWER_READY:
+        break;
+        */
 
         default:
             // No implementation needed.
@@ -458,7 +416,7 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
 static void whitelist_load(void)
 {
     ret_code_t   ret;
-    pm_peer_id_t peers[8];
+    pm_peer_id_t peers[5]; //Max 8 cuz whitelist max is 8
     uint32_t     peer_cnt;
 
     memset(peers, PM_PEER_ID_INVALID, sizeof(peers));
@@ -500,6 +458,7 @@ static void on_whitelist_req(void)
     // Get the whitelist previously set using pm_whitelist_set().
     err_code = pm_whitelist_get(whitelist_addrs, &addr_cnt,
                                 whitelist_irks, &irk_cnt);
+    APP_ERROR_CHECK(err_code);
 
     if (((addr_cnt == 0) && (irk_cnt == 0)) ||
         (m_whitelist_disabled))
@@ -670,7 +629,7 @@ static void modules_init(void)
 
 int main(void)
 {
-
+    NRF_POWER->DCDCEN = 1;
     // Initialize.
     modules_init();
     whitelist_load();
@@ -679,8 +638,27 @@ int main(void)
     scanning_start(&m_erase_bonds);
 
     // Enter main loop.
-    for (;;)
+    while (1)
     {
-        nrf_pwr_mgmt_run();
+        if(device_connected && !sampling_started) //Once device is conencted then start boundary definition.
+        {
+            saadc_init();
+            sampling_started = true;
+        }
+        
+        if(device_connected && m_saadc_calib)
+        {
+            nrf_drv_saadc_abort();                                  // Abort all ongoing conversions. Calibration cannot be run if SAADC is busy
+            while(nrf_drv_saadc_calibrate_offset() != NRF_SUCCESS); //Trigger calibration task
+            /**@todo m_saadc_calib = false;
+                 */
+        }
+        
+        if (device_connected && sampling_started && !ble_tx_in_flight && !m_saadc_calib)
+        {
+            nrf_drv_saadc_sample();  
+            ble_tx_in_flight = true;
+        }
+      nrf_pwr_mgmt_run();
     }
 }

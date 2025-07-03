@@ -43,7 +43,16 @@
       project_directory=""
       project_type="Executable" />
     <folder Name="Application">
+      <configuration
+        Name="Common"
+        c_user_include_directories="C:\\Users\\katri\\Desktop\\nrf52-donggle\\pika\\nRF5_SDK_17.1.0_ddde560\\nRF5_SDK_17.1.0_ddde560\\examples\\jesica\\ble_app_gatts\\pca10056\\s140\\ses" />
+      <file file_name="aadc.c" />
+      <file file_name="aadc.h" />
+      <file file_name="hid.h" />
+      <file file_name="keyboard.c" />
+      <file file_name="keyboard.h" />
       <file file_name="../../../main.c" />
+      <file file_name="main.h" />
       <file file_name="../config/sdk_config.h" />
     </folder>
     <folder Name="Board Definition">
@@ -79,11 +88,15 @@
     </folder>
     <folder Name="nRF_Drivers">
       <file file_name="../../../../../../integration/nrfx/legacy/nrf_drv_clock.c" />
+      <file file_name="../../../../../../integration/nrfx/legacy/nrf_drv_ppi.c" />
       <file file_name="../../../../../../integration/nrfx/legacy/nrf_drv_uart.c" />
       <file file_name="../../../../../../modules/nrfx/soc/nrfx_atomic.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_clock.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_gpiote.c" />
+      <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_ppi.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/prs/nrfx_prs.c" />
+      <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_saadc.c" />
+      <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_timer.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_uart.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_uarte.c" />
     </folder>
