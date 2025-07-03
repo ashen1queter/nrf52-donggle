@@ -48,6 +48,9 @@
         c_user_include_directories="C:\\Users\\katri\\Desktop\\nrf52-donggle\\pika\\nRF5_SDK_17.1.0_ddde560\\nRF5_SDK_17.1.0_ddde560\\examples\\jesica\\ble_app_gatts\\pca10056\\s140\\ses" />
       <file file_name="aadc.c" />
       <file file_name="aadc.h" />
+      <file file_name="config.c" />
+      <file file_name="config.h" />
+      <file file_name="drv2605l.h" />
       <file file_name="hid.h" />
       <file file_name="keyboard.c" />
       <file file_name="keyboard.h" />

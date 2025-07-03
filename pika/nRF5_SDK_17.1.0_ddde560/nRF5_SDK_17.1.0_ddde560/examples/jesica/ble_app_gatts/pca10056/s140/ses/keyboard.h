@@ -2,7 +2,7 @@
 #ifndef __KEYBOARD_H
 #define __KEYBOARD_H
 
-//#include "config.h"
+#include "config.h"
 #include <stdint.h>
 
 #define CALIBRATION_CYCLES 20
@@ -94,7 +94,7 @@ struct user_config {
   uint8_t rapid_trigger_offset;
   uint8_t screaming_velocity_trigger;
   uint16_t tap_timeout;
-  uint16_t keymaps[2][0][3];
+  uint16_t keymaps[LAYERS_COUNT][MATRIX_ROWS][MATRIX_COLS];
 };
 
 void keyboard_task();

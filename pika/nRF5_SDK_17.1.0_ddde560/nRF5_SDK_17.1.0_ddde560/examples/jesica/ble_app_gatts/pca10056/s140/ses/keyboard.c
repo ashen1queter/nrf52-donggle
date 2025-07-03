@@ -1,11 +1,10 @@
 #include "keyboard.h"
-//#include "DRV2605L.h"
+#include "DRV2605L.h"
 #include "hid.h"
+#include <class/hid/hid.h>
 #include <stdlib.h>
 
-//struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT] = {0};
-#define FINGER_COUNT 3
-struct key glove_keys[FINGER_COUNT];
+struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT] = {0};
 struct user_config keyboard_user_config = {0};
 
 uint32_t keyboard_last_cycle_duration = 0;
@@ -43,10 +42,13 @@ uint16_t get_usage_consumer_control(uint16_t value) {
   }
 }
 
-void init_key(struct key *key, uint8_t index) {
+void init_key(uint8_t adc_channel, uint8_t amux_channel, uint8_t row, uint8_t column) {
+  struct key *key = &keyboard_keys[adc_channel][amux_channel];
 
   key->is_enabled = 1;
   key->is_idle = 0;
+  key->row = row;
+  key->column = column;
 
   key->calibration.cycles_count = 0;
   key->calibration.idle_value = IDLE_VALUE_APPROX;
@@ -58,22 +60,21 @@ void init_key(struct key *key, uint8_t index) {
   key->actuation.rapid_trigger_offset = keyboard_user_config.rapid_trigger_offset;
   key->actuation.is_continuous_rapid_trigger_enabled = 0;
 
-  for (uint8_t layer = 0; layer < LAYERS_COUNT; layer++) {
-    uint16_t keycode = keyboard_user_config.keymaps[layer][0][index];
-    if (keycode == ____) continue;
-
-    uint16_t consumer = get_usage_consumer_control(keycode);
-    if (consumer) {
-      key->layers[layer].type = KEY_TYPE_CONSUMER_CONTROL;
-      key->layers[layer].value = consumer;
-    } else {
-      uint8_t mod = get_bitmask_for_modifier(keycode);
-      if (mod) {
-        key->layers[layer].type = KEY_TYPE_MODIFIER;
-        key->layers[layer].value = mod;
+  for (uint8_t i = 0; i < LAYERS_COUNT; i++) {
+    if (keyboard_user_config.keymaps[i][row][column] != ____) {
+      uint16_t usage_consumer_control = get_usage_consumer_control(keyboard_user_config.keymaps[i][row][column]);
+      if (usage_consumer_control) {
+        key->layers[i].type = KEY_TYPE_CONSUMER_CONTROL;
+        key->layers[i].value = usage_consumer_control;
       } else {
-        key->layers[layer].type = KEY_TYPE_NORMAL;
-        key->layers[layer].value = keycode;
+        uint8_t bitmask = get_bitmask_for_modifier(keyboard_user_config.keymaps[i][row][column]);
+        if (bitmask) {
+          key->layers[i].type = KEY_TYPE_MODIFIER;
+          key->layers[i].value = bitmask;
+        } else {
+          key->layers[i].type = KEY_TYPE_NORMAL;
+          key->layers[i].value = keyboard_user_config.keymaps[i][row][column];
+        }
       }
     }
   }
@@ -83,11 +84,11 @@ uint8_t update_key_state(struct key *key) {
   struct state state;
 
   // Get a reading
-  //state.value = keyboard_user_config.reverse_magnet_pole ? 4500 - keyboard_read_adc() : keyboard_read_adc();
+  state.value = keyboard_user_config.reverse_magnet_pole ? 4500 - keyboard_read_adc() : keyboard_read_adc();
 
   if (key->calibration.cycles_count < CALIBRATION_CYCLES) {
     // Calibrate idle value
-    float delta = 0.6; /**@todo Placeholder*/
+    float delta = 0.6;
     key->calibration.idle_value = (1 - delta) * state.value + delta * key->calibration.idle_value;
     key->calibration.cycles_count++;
 
@@ -112,11 +113,11 @@ uint8_t update_key_state(struct key *key) {
   }
 
   // Get distance from top
-  if (state.value <= key->calibration.idle_value + IDLE_VALUE_OFFSET) {
+  if (state.value >= key->calibration.idle_value - IDLE_VALUE_OFFSET) {
     state.distance = 0;
     key->actuation.direction_changed_point = 0;
   } else {
-    state.distance = state.value - (key->calibration.idle_value + IDLE_VALUE_OFFSET);
+    state.distance = key->calibration.idle_value - IDLE_VALUE_OFFSET - state.value;
     key->is_idle = 0;
     key->idle_counter = 0;
   }
@@ -178,7 +179,7 @@ void update_key_actuation(struct key *key) {
    *
    */
 
-  // if rapid trigger enable, move trigger and reset offsets according to the distance that began the trigger
+  // if rapid trigger enable, move trigger and reset offsets according to the distance taht began the trigger
 
   uint32_t now = keyboard_get_time();
   uint8_t is_after_trigger_offset = key->state.distance_8bits > key->actuation.trigger_offset;
@@ -310,26 +311,3 @@ void keyboard_task() {
 
   keyboard_last_cycle_duration = keyboard_get_time() - started_at;
 }
-
-
-
-keyboard_user_config.keymaps[_BASE_LAYER][0][0] = HID_KEY_A;  // Finger 0 → A
-keyboard_user_config.keymaps[_BASE_LAYER][0][1] = HID_KEY_W;  // Finger 1 → W (hold)
-keyboard_user_config.keymaps[_TAP_LAYER][0][1]  = HID_KEY_S;  // Finger 1 → S (tap)
-keyboard_user_config.keymaps[_BASE_LAYER][0][2] = HID_KEY_D;  // Finger 2 → D
-
-void glove_init_keys() {
-  keyboard_read_config();  // Load config from flash or default
-
-  init_key(&glove_keys[0], 0);  // Index finger → A (BASE)
-  init_key(&glove_keys[1], 1);  // Middle finger → W (BASE), S (TAP)
-  init_key(&glove_keys[2], 2);  // Ring finger → D (BASE)
-}
-
-/** @todo Sampling when
-for (int i = 0; i < FINGER_COUNT; i++) {
-  glove_keys[i].state.value = your_adc_value[i];
-  update_key(&glove_keys[i]);
-}
-*/
-
