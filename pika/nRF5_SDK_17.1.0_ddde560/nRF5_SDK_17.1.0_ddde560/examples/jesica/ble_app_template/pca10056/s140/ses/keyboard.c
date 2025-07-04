@@ -6,9 +6,11 @@
 #include "main.h"
 #include "config.h"
 
+
 struct key keyboard_keys[3] = {0};
 struct state flex_keys[3] = {0};
-  
+
+
 struct user_config keyboard_user_config = {
     //.reverse_magnet_pole = DEFAULT_REVERSE_MAGNET_POLE,
     .trigger_offset = {0},
@@ -18,10 +20,10 @@ struct user_config keyboard_user_config = {
     .tap_timeout = DEFAULT_TAP_TIMEOUT,
     .keymaps = {
         [_BASE_LAYER] = {
-            {HID_KEY_A, HID_KEY_W, HID_KEY_D}
+            {APP_USBD_HID_KBD_A, APP_USBD_HID_KBD_A, APP_USBD_HID_KBD_D}
         },
         [_TAP_LAYER] = {
-            {____, HID_KEY_S, ____}
+            {____, APP_USBD_HID_KBD_S, ____}
         },
     }
 };

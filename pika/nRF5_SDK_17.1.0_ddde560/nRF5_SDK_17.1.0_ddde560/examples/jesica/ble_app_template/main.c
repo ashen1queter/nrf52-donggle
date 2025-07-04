@@ -28,6 +28,12 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 #include "ble_cus.h"
+#include "config.h"
+#include "keyboard.h"
+#include "app_usbd.h"
+#include "app_usbd_core.h"
+#include "app_usbd_hid_generic.h"
+#include "app_usbd_hid_kbd.h"
 
 #define DEVICE_NAME                     "Nordic_Dongle"                         /**< Name of device. Will be included in the advertising data. */
 #define APP_ADV_INTERVAL                300                                     /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
@@ -646,9 +652,12 @@ int main(void)
 
     advertising_start();
 
+    keyboard_init_keys();
+
     // Enter main loop.
     for (;;)
     {
+        keyboard_task();
         idle_state_handle();
     }
 }

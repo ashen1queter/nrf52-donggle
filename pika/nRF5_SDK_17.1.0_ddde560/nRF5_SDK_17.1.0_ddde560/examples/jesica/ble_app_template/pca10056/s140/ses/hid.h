@@ -3,6 +3,7 @@
 
 #include "keyboard.h"
 #include <stdint.h>
+#include "app_usbd_hid_kbd.h"
 
 #define VENDOR_REQUEST_KEYS 0xfe
 #define VENDOR_REQUEST_CONFIG 0xff

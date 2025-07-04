@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 extern uint8_t const desc_ms_os_20[];
-extern struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT];
+//extern struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT];
 extern struct user_config keyboard_user_config;
 extern uint32_t keyboard_last_cycle_duration;
 
@@ -13,12 +13,15 @@ static uint8_t should_send_consumer_report = 0;
 static uint8_t should_send_keyboard_report = 0;
 
 static uint8_t modifiers = 0;
-static uint8_t keycodes[6] = {0};
+static uint8_t keycodes[3] = {0};
 // static uint8_t is_screaming = 0;
 static uint8_t consumer_report = 0;
 
-CFG_TUSB_MEM_SECTION CFG_TUSB_MEM_ALIGN static uint8_t usb_vendor_control_buffer[400];
+APP_USBD_HID_KBD_GLOBAL_DEF(m_keeb, 0, NRF_DRV_USBD_EPIN1, NULL, APP_USBD_HID_SUBCLASS_BOOT);
 
+//CFG_TUSB_MEM_SECTION CFG_TUSB_MEM_ALIGN static uint8_t usb_vendor_control_buffer[400];
+
+/**
 void hid_init() {
   tud_init(BOARD_TUD_RHPORT);
 }
@@ -40,6 +43,7 @@ void hid_task() {
     }
   }
 }
+*/
 
 void hid_press_key(struct key *key, uint8_t layer) {
   switch (key->layers[layer].type) {
@@ -49,7 +53,7 @@ void hid_press_key(struct key *key, uint8_t layer) {
     break;
 
   case KEY_TYPE_NORMAL:
-    for (uint8_t i = 0; i < 6; i++) {
+    for (uint8_t i = 0; i < 3; i++) {
       if (keycodes[i] == 0) {
         keycodes[i] = key->layers[layer].value;
         // if the key is violently pressed, automatically add the MAJ modifier :)
@@ -61,6 +65,7 @@ void hid_press_key(struct key *key, uint8_t layer) {
         //   modifiers |= get_bitmask_for_modifier(HID_KEY_SHIFT_LEFT);
         // }
         should_send_keyboard_report = 1;
+        app_usbd_hid_kbd_key_control(&m_keeb, keycodes[i], true);
         break;
       }
     }
@@ -84,17 +89,20 @@ void hid_release_key(struct key *key, uint8_t layer) {
     break;
 
   case KEY_TYPE_NORMAL:
-    for (uint8_t i = 0; i < 6; i++) {
-      if (keycodes[i] == key->layers[layer].value) {
+    for (uint8_t i = 0; i < 3; i++) {
         keycodes[i] = 0;
+
+        // if the key is violently pressed, automatically add the MAJ modifier :)
         // if (is_screaming) {
         //   is_screaming = 0;
         //   modifiers &= ~get_bitmask_for_modifier(HID_KEY_SHIFT_LEFT);
+        // } else if (i == 0 && key->state.velocity > keyboard_user_config.screaming_velocity_trigger) {
+        //   is_screaming = 1;
+        //   modifiers |= get_bitmask_for_modifier(HID_KEY_SHIFT_LEFT);
         // }
         should_send_keyboard_report = 1;
-        break;
+        app_usbd_hid_kbd_key_control(&m_keeb, keycodes[i], false);
       }
-    }
     break;
 
   case KEY_TYPE_CONSUMER_CONTROL:
@@ -107,6 +115,8 @@ void hid_release_key(struct key *key, uint8_t layer) {
   }
 }
 
+
+/**
 // Invoked when received SET_PROTOCOL request
 // protocol is either HID_PROTOCOL_BOOT (0) or HID_PROTOCOL_REPORT (1)
 void tud_hid_set_protocol_cb(uint8_t instance, uint8_t protocol) {
@@ -339,3 +349,4 @@ bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_requ
   }
   return false;
 }
+*/
