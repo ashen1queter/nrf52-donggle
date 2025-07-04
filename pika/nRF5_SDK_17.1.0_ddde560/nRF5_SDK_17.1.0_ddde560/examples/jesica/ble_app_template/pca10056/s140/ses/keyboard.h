@@ -7,8 +7,8 @@
 
 #define CALIBRATION_CYCLES 20
 
-#define IDLE_VALUE_APPROX 1800
-#define MAX_DISTANCE_APPROX 500
+#define IDLE_VALUE_APPROX 10
+#define MAX_DISTANCE_APPROX 100
 #define IDLE_VALUE_OFFSET 10
 #define MAX_DISTANCE_OFFSET 60
 #define IDLE_CYCLES_UNTIL_SLEEP 15
@@ -16,7 +16,7 @@
 #define XXXX 0xff
 #define ____ 0x00
 
-#define SPECIAL(X) (0b1000000000000000 | X)
+//#define SPECIAL(X) (0b1000000000000000 | X)
 
 struct __attribute__((__packed__)) calibration {
   uint16_t cycles_count;
@@ -89,7 +89,7 @@ struct __attribute__((__packed__)) key {
 
 struct user_config {
   uint8_t reverse_magnet_pole;
-  uint8_t trigger_offset;
+  uint8_t trigger_offset[3];
   uint8_t reset_threshold;
   uint8_t rapid_trigger_offset[3];
   uint8_t screaming_velocity_trigger;

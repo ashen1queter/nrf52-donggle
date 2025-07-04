@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 extern uint8_t const desc_ms_os_20[];
-//extern struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT];
+extern struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT];
 extern struct user_config keyboard_user_config;
 extern uint32_t keyboard_last_cycle_duration;
 

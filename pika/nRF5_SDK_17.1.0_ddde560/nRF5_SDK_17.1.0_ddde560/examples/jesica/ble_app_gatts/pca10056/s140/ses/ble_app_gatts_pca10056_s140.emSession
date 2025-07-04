@@ -39,23 +39,16 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="653" useTextEdit="1" folds0="88,100" path="../../../main.c" left="0" top="609" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="32" y="3" useTextEdit="1" path="main.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="84" y="104" useTextEdit="1" folds0="47,52,204,212" path="aadc.c" left="0" top="92" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="25" y="35" useTextEdit="1" path="aadc.h" left="0" top="24" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="5900" useTextEdit="1" path="../config/sdk_config.h" left="0" top="5874" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="653" useTextEdit="1" folds0="88,100" path="../../../main.c" left="0" top="636" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="104" useTextEdit="1" folds0="47,52,204,212" path="aadc.c" left="0" top="92" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="25" y="35" useTextEdit="1" path="aadc.h" left="0" top="19" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="14" y="5900" useTextEdit="1" path="../config/sdk_config.h" left="0" top="5883" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="42" y="97" useTextEdit="1" path="../../../../../../integration/nrfx/legacy/nrf_drv_saadc.h" left="0" top="81" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="44" y="539" useTextEdit="1" path="../../../../../../modules/nrfx/drivers/src/nrfx_saadc.c" left="0" top="518" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="18" useTextEdit="1" path="keyboard.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="241" useTextEdit="1" path="keyboard.c" left="0" top="261" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="24" y="13" useTextEdit="1" path="hid.h" left="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="44" y="539" useTextEdit="1" path="../../../../../../modules/nrfx/drivers/src/nrfx_saadc.c" left="0" top="523" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="40" y="274" useTextEdit="1" path="C:/Program Files/SEGGER/SEGGER Embedded Studio 8.24/include/stdint.h" left="0" top="258" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="54" y="85" useTextEdit="1" path="../../../../../../components/softdevice/s140/headers/ble_gattc.h" left="0" top="79" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="28" y="222" useTextEdit="1" path="../../../../../../modules/nrfx/drivers/include/nrfx_saadc.h" left="0" top="209" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="157" y="159" useTextEdit="1" path="../../../../../../modules/nrfx/hal/nrf_saadc.h" left="0" top="805" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="32" useTextEdit="1" path="config.c" left="0" selected="1" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="23" y="22" useTextEdit="1" path="config.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="195" useTextEdit="1" path="drv2605l.h" left="0" top="147" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="157" y="159" useTextEdit="1" path="../../../../../../modules/nrfx/hal/nrf_saadc.h" left="94" selected="1" top="159" codecName="Default"/>
  </Files>
  <EMStudioWindow activeProject="ble_app_gatts_pca10056_s140" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/katri/Desktop/nrf52-donggle/pika/nRF5_SDK_17.1.0_ddde560/nRF5_SDK_17.1.0_ddde560/modules/nrfx/drivers/src" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

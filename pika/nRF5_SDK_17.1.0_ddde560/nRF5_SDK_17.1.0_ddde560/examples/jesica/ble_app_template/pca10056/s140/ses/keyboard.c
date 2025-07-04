@@ -1,16 +1,37 @@
 #include "keyboard.h"
-#include "DRV2605L.h"
+//#include "DRV2605L.h"
 #include "hid.h"
-#include <class/hid/hid.h>
+//#include <class/hid/hid.h>
 #include <stdlib.h>
+#include "main.h"
+#include "config.h"
 
-struct key keyboard_keys[ADC_CHANNEL_COUNT][AMUX_CHANNEL_COUNT] = {0};
-struct user_config keyboard_user_config = {0};
+struct key keyboard_keys[3] = {0};
+struct state flex_keys[3] = {0};
+  
+struct user_config keyboard_user_config = {
+    //.reverse_magnet_pole = DEFAULT_REVERSE_MAGNET_POLE,
+    .trigger_offset = {0},
+    .reset_threshold = DEFAULT_RESET_THRESHOLD,
+    .rapid_trigger_offset = {0},
+    .screaming_velocity_trigger = DEFAULT_SCREAMING_VELOCITY_TRIGGER,
+    .tap_timeout = DEFAULT_TAP_TIMEOUT,
+    .keymaps = {
+        [_BASE_LAYER] = {
+            {HID_KEY_A, HID_KEY_W, HID_KEY_D}
+        },
+        [_TAP_LAYER] = {
+            {____, HID_KEY_S, ____}
+        },
+    }
+};
+
 
 uint32_t keyboard_last_cycle_duration = 0;
 
 static uint8_t key_triggered = 0;
 
+/**
 uint8_t get_bitmask_for_modifier(uint8_t keycode) {
   switch (keycode) {
   case HID_KEY_CONTROL_LEFT:
@@ -33,6 +54,8 @@ uint8_t get_bitmask_for_modifier(uint8_t keycode) {
     return 0b00000000;
   }
 }
+*/
+
 
 uint16_t get_usage_consumer_control(uint16_t value) {
   if (value > 0xFF) {
@@ -42,8 +65,11 @@ uint16_t get_usage_consumer_control(uint16_t value) {
   }
 }
 
-void init_key(uint8_t adc_channel, uint8_t amux_channel, uint8_t row, uint8_t column) {
-  struct key *key = &keyboard_keys[adc_channel][amux_channel];
+void init_key(uint8_t i, uint8_t row, uint8_t column) {
+  struct key *key = &keyboard_keys[i];
+
+  keyboard_user_config.rapid_trigger_offset[i] = cus_actuation[i];
+  keyboard_user_config.trigger_offset[i] = cus_actuation[i];
 
   key->is_enabled = 1;
   key->is_idle = 0;
@@ -55,9 +81,9 @@ void init_key(uint8_t adc_channel, uint8_t amux_channel, uint8_t row, uint8_t co
   key->calibration.max_distance = MAX_DISTANCE_APPROX;
 
   key->actuation.status = STATUS_RESET;
-  key->actuation.trigger_offset = keyboard_user_config.trigger_offset;
-  key->actuation.reset_offset = keyboard_user_config.trigger_offset - keyboard_user_config.reset_threshold;
-  key->actuation.rapid_trigger_offset = keyboard_user_config.rapid_trigger_offset;
+  key->actuation.trigger_offset = keyboard_user_config.trigger_offset[i];
+  key->actuation.reset_offset = keyboard_user_config.trigger_offset[i] - keyboard_user_config.reset_threshold;
+  key->actuation.rapid_trigger_offset = keyboard_user_config.rapid_trigger_offset[i];
   key->actuation.is_continuous_rapid_trigger_enabled = 0;
 
   for (uint8_t i = 0; i < LAYERS_COUNT; i++) {
@@ -67,44 +93,42 @@ void init_key(uint8_t adc_channel, uint8_t amux_channel, uint8_t row, uint8_t co
         key->layers[i].type = KEY_TYPE_CONSUMER_CONTROL;
         key->layers[i].value = usage_consumer_control;
       } else {
-        uint8_t bitmask = get_bitmask_for_modifier(keyboard_user_config.keymaps[i][row][column]);
+        /**uint8_t bitmask = get_bitmask_for_modifier(keyboard_user_config.keymaps[i][row][column]);
         if (bitmask) {
           key->layers[i].type = KEY_TYPE_MODIFIER;
-          key->layers[i].value = bitmask;
-        } else {
+          key->layers[i].value = bitmask;}
+          */
           key->layers[i].type = KEY_TYPE_NORMAL;
           key->layers[i].value = keyboard_user_config.keymaps[i][row][column];
         }
-      }
     }
   }
 }
 
-uint8_t update_key_state(struct key *key) {
-  struct state state;
+uint8_t update_key_state(struct key *key, struct state *state) {
 
   // Get a reading
-  state.value = keyboard_user_config.reverse_magnet_pole ? 4500 - keyboard_read_adc() : keyboard_read_adc();
+  //state.value = keyboard_user_config.reverse_magnet_pole ? 4500 - keyboard_read_adc() : keyboard_read_adc();
 
   if (key->calibration.cycles_count < CALIBRATION_CYCLES) {
     // Calibrate idle value
     float delta = 0.6;
-    key->calibration.idle_value = (1 - delta) * state.value + delta * key->calibration.idle_value;
+    key->calibration.idle_value = (1 - delta) * state->value + delta * key->calibration.idle_value;
     key->calibration.cycles_count++;
 
     return 0;
   }
 
   // Calibrate idle value
-  if (state.value > key->calibration.idle_value) {
+  if (state->value < key->calibration.idle_value) {
     // opti possible sur float
     float delta = 0.8;
-    key->calibration.idle_value = (1 - delta) * state.value + delta * key->calibration.idle_value;
-    state.value = key->calibration.idle_value;
+    key->calibration.idle_value = (1 - delta) * state->value + delta * key->calibration.idle_value;
+    state->value = key->calibration.idle_value;
   }
 
   // Do nothing if key is idle
-  if (key->state.distance == 0 && state.value >= key->calibration.idle_value - IDLE_VALUE_OFFSET) {
+  if (key->state.distance == 0 && state->value <= key->calibration.idle_value + IDLE_VALUE_OFFSET) {
     if (key->idle_counter >= IDLE_CYCLES_UNTIL_SLEEP) {
       key->is_idle = 1;
       return 0;
@@ -113,49 +137,49 @@ uint8_t update_key_state(struct key *key) {
   }
 
   // Get distance from top
-  if (state.value >= key->calibration.idle_value - IDLE_VALUE_OFFSET) {
-    state.distance = 0;
+  if (state->value <= key->calibration.idle_value + IDLE_VALUE_OFFSET) {
+    state->distance = 0;
     key->actuation.direction_changed_point = 0;
   } else {
-    state.distance = key->calibration.idle_value - IDLE_VALUE_OFFSET - state.value;
+    state->distance = state->value - key->calibration.idle_value + IDLE_VALUE_OFFSET;
     key->is_idle = 0;
     key->idle_counter = 0;
   }
 
   // Calibrate max distance value
-  if (state.distance > key->calibration.max_distance) {
-    key->calibration.max_distance = state.distance;
+  if (state->distance > key->calibration.max_distance) {
+    key->calibration.max_distance = state->distance;
   }
 
   // Limit max distance
-  if (state.distance >= key->calibration.max_distance - MAX_DISTANCE_OFFSET) {
-    state.distance = key->calibration.max_distance;
+  if (state->distance >= key->calibration.max_distance - MAX_DISTANCE_OFFSET) {
+    state->distance = key->calibration.max_distance;
   }
 
   // Map distance in percentages
-  state.distance_8bits = (state.distance * 0xff) / key->calibration.max_distance;
+  state->distance_8bits = (state->distance * 0xff) / key->calibration.max_distance;
 
   float delta = 0.8;
-  state.filtered_distance = (1 - delta) * state.distance_8bits + delta * key->state.filtered_distance;
-  state.filtered_distance_8bits = state.filtered_distance;
+  state->filtered_distance = (1 - delta) * state->distance_8bits + delta * key->state.filtered_distance;
+  state->filtered_distance_8bits = state->filtered_distance;
 
   // Update velocity
-  state.velocity = state.filtered_distance_8bits - key->state.filtered_distance_8bits;
+  state->velocity = state->filtered_distance_8bits - key->state.filtered_distance_8bits;
 
   // Update direction
-  if (key->state.velocity > 0 && state.velocity > 0 && key->actuation.direction != GOING_DOWN) {
+  if (key->state.velocity > 0 && state->velocity > 0 && key->actuation.direction != GOING_DOWN) {
     key->actuation.direction = GOING_DOWN;
     if (key->actuation.direction_changed_point != 0) {
       key->actuation.direction_changed_point = key->state.filtered_distance_8bits;
     }
-  } else if (key->state.velocity < 0 && state.velocity < 0 && key->actuation.direction != GOING_UP) {
+  } else if (key->state.velocity < 0 && state->velocity < 0 && key->actuation.direction != GOING_UP) {
     key->actuation.direction = GOING_UP;
     if (key->actuation.direction_changed_point != 255) {
       key->actuation.direction_changed_point = key->state.filtered_distance_8bits;
     }
   }
 
-  key->state = state;
+  key->state = *state;
   return 1;
 }
 
@@ -248,64 +272,54 @@ void update_key_actuation(struct key *key) {
   }
 }
 
-void update_key(struct key *key) {
-  if (!update_key_state(key)) {
+void update_key(struct key *key, struct state *state) {
+  if (!update_key_state(key, state)) {
     return;
   }
 
   update_key_actuation(key);
 }
 
-void keyboard_init_keys() {
-  keyboard_read_config();
+void keyboard_init_keys(void) {
 
   for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
     for (uint8_t col = 0; col < MATRIX_COLS; col++) {
       if (channels_by_row_col[row][col][0] != XXXX) {
-        init_key(channels_by_row_col[row][col][0], channels_by_row_col[row][col][1], row, col);
+        init_key(channels_by_row_col[row][col][0], row, col);
       }
     }
   }
 }
 
-void keyboard_task() {
+void keyboard_task(void) {
   uint32_t started_at = keyboard_get_time();
-  key_triggered = 0;
 
-  for (uint8_t amux_channel = 0; amux_channel < AMUX_CHANNEL_COUNT; amux_channel++) {
-    keyboard_select_amux(amux_channel);
+  for (uint8_t i = 0; i < 3; i++) {
+    struct key *key = &keyboard_keys[i];
+    struct state *state = &flex_keys[i];
+    state->value = adc_values[i];
 
-    for (uint8_t adc_channel = 0; adc_channel < ADC_CHANNEL_COUNT; adc_channel++) {
-      if (keyboard_keys[adc_channel][amux_channel].is_enabled == 0) {
-        continue;
-      }
-      keyboard_select_adc(adc_channel);
+    if (!key->is_enabled)
+      continue;
 
-      update_key(&keyboard_keys[adc_channel][amux_channel]);
-
-      keyboard_close_adc();
-    }
+    update_key(key, state); 
   }
 
-  // If a key might be tap and a non tap key has been triggered, then the might be tap key is a normal trigger
-  for (uint8_t amux_channel = 0; amux_channel < AMUX_CHANNEL_COUNT; amux_channel++) {
-    for (uint8_t adc_channel = 0; adc_channel < ADC_CHANNEL_COUNT; adc_channel++) {
-      if (keyboard_keys[adc_channel][amux_channel].is_enabled == 0 || keyboard_keys[adc_channel][amux_channel].actuation.status != STATUS_MIGHT_BE_TAP) {
-        continue;
-      }
+  for (uint8_t i = 0; i < 3; i++) {
+    struct key *key = &keyboard_keys[i];
 
-      struct key *key = &keyboard_keys[adc_channel][amux_channel];
-      uint8_t is_before_reset_offset = key->state.distance_8bits < key->actuation.reset_offset;
-      uint8_t is_before_timeout = keyboard_get_time() - key->actuation.triggered_at <= keyboard_user_config.tap_timeout;
+    if (!key->is_enabled || key->actuation.status != STATUS_MIGHT_BE_TAP)
+      continue;
 
-      // if might be tap, can be tap or triggered
-      if (is_before_reset_offset && is_before_timeout) {
-        key->actuation.status = STATUS_TAP;
-        hid_press_key(key, _TAP_LAYER);
-      } else if (!is_before_timeout || key_triggered) {
-        key->actuation.status = STATUS_TRIGGERED;
-        hid_press_key(key, _BASE_LAYER);
-      }
+    uint8_t is_before_reset_offset = key->state.distance_8bits < key->actuation.reset_offset;
+    uint8_t is_before_timeout = (keyboard_get_time() - key->actuation.triggered_at) <= keyboard_user_config.tap_timeout;
+
+    if (is_before_reset_offset && is_before_timeout) {
+      key->actuation.status = STATUS_TAP;
+      hid_press_key(key, _TAP_LAYER);  // tap behavior
+    } else if (!is_before_timeout || key_triggered) {
+      key->actuation.status = STATUS_TRIGGERED;
+      hid_press_key(key, _BASE_LAYER);  // normal key
     }
   }
 

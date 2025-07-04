@@ -2,7 +2,6 @@
 #define _DRV2605_H
 
 #include <stdio.h>
-#include <stdint.h>
 
 #define DRV2605_ADDR 0x5A ///< Device I2C address
 
