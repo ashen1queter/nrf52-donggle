@@ -95,16 +95,24 @@ void saadc_callback(nrf_drv_saadc_evt_t const* p_event) {
     }
 
     for (int i = 0; i < p_event->data.done.size; i++) {
-      uint16_t yo     = p_event->data.done.p_buffer[i];
+      uint16_t yo = p_event->data.done.p_buffer[i];
+      if(yo < IDLE_VLAUE)
+      {
+          yo = IDLE_VLAUE;
+      }
+
+      if (yo > IDLE_VLAUE && yo < IDLE_VLAUE + DEADZONE_OFFSET)
+      { 
+          yo = 0;
+      }
+
       bit8_map_arr[i] = (yo * 0xff) / 0xfff;
-      /**@todo Write to the custom char on a custom service of nrf53840 Dongle
-       */
       // NRF_LOG_INFO("%d\r\n", p_event->data.done.p_buffer[i]);
     }
 
     ble_gattc_write_params_t write_params = {.write_op = BLE_GATT_OP_WRITE_CMD,    // Write Without Response
                                              .flags    = 0,
-                                             .handle   = m_char_handle,    // 🔁 Replace with discovered char handle
+                                             .handle   = m_char_handle,            // Discovered char handle
                                              .offset   = 0,
                                              .len      = sizeof(bit8_map_arr),
                                              .p_value  = (uint8_t*)bit8_map_arr};

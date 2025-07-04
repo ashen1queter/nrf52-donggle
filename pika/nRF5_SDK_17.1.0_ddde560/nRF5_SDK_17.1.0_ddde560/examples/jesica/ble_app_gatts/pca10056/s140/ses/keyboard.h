@@ -91,7 +91,7 @@ struct user_config {
   uint8_t reverse_magnet_pole;
   uint8_t trigger_offset;
   uint8_t reset_threshold;
-  uint8_t rapid_trigger_offset;
+  uint8_t rapid_trigger_offset[3];
   uint8_t screaming_velocity_trigger;
   uint16_t tap_timeout;
   uint16_t keymaps[LAYERS_COUNT][MATRIX_ROWS][MATRIX_COLS];
